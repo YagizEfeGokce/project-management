@@ -288,12 +288,12 @@ html,body{font-family:var(--font);background:var(--bg);color:var(--text);min-hei
 <div class="modal-overlay" id="configModal">
   <div class="config-panel">
     <h2>⚙️ JSONbin Setup</h2>
-    <p>Task verilerini ekiple paylaşmak için JSONbin.io API bilgilerini girin. Ücretsiz ve kurulum gerektirmez.</p>
+    <p>Enter your JSONbin.io API details to share task data with your team. Free and no setup required.</p>
     <div class="config-steps">
-      <div class="config-step"><div class="step-num">1</div><span><a href="https://jsonbin.io" target="_blank">jsonbin.io</a>'ya git → Sign Up (ücretsiz)</span></div>
+      <div class="config-step"><div class="step-num">1</div><span><a href="https://jsonbin.io" target="_blank">jsonbin.io</a> → Sign Up (free)</span></div>
       <div class="config-step"><div class="step-num">2</div><span>Dashboard → API Keys → Master Key'i kopyala</span></div>
-      <div class="config-step"><div class="step-num">3</div><span>Bins → Create Bin → içine <code style="background:var(--bg4);padding:1px 5px;border-radius:3px">{"tasks":[],"comments":{}}</code> yaz → Create</span></div>
-      <div class="config-step"><div class="step-num">4</div><span>Oluşturulan Bin'in ID'sini (URL'deki <code style="background:var(--bg4);padding:1px 5px;border-radius:3px">/b/...</code> kısmı) kopyala</span></div>
+      <div class="config-step"><div class="step-num">3</div><span>Bins → Create Bin → paste <code style="background:var(--bg4);padding:1px 5px;border-radius:3px">{"tasks":[],"comments":{}}</code> → Create</span></div>
+      <div class="config-step"><div class="step-num">4</div><span>Copy the created Bin ID (the <code style="background:var(--bg4);padding:1px 5px;border-radius:3px">/b/...</code> part in the URL)</span></div>
     </div>
     <div class="form-group">
       <label class="form-label">Master API Key</label>
@@ -304,11 +304,11 @@ html,body{font-family:var(--font);background:var(--bg);color:var(--text);min-hei
       <input class="form-input" id="cfg-binid" placeholder="6628a1...">
     </div>
     <div style="background:var(--amberbg);border-radius:8px;padding:10px 12px;font-size:11px;color:#92400e;margin-bottom:16px">
-      ⚠️ Bu bilgiler tarayıcında saklanır. Paylaşılan cihazlarda dikkatli ol.
+      ⚠️ This information is stored in your browser. Be careful on shared devices.
     </div>
     <div style="display:flex;gap:8px">
-      <button class="btn btn-ghost" style="flex:1" onclick="useLocalMode()">Şimdilik local kullan</button>
-      <button class="btn btn-primary" style="flex:1" onclick="saveConfig()">Kaydet & Bağlan</button>
+      <button class="btn btn-ghost" style="flex:1" onclick="useLocalMode()">Use local for now</button>
+      <button class="btn btn-primary" style="flex:1" onclick="saveConfig()">Save & Connect</button>
     </div>
   </div>
 </div>
@@ -856,7 +856,7 @@ html,body{font-family:var(--font);background:var(--bg);color:var(--text);min-hei
         <option value="5">Yağız Efe Gökçe</option>
         <option value="6">Emirhan Polat</option>
       </select>
-      <div style="font-size:11px;color:var(--text3);margin-top:4px">Ctrl/Cmd ile birden fazla seçebilirsin</div>
+      <div style="font-size:11px;color:var(--text3);margin-top:4px">You can select multiple with Ctrl/Cmd</div>
     </div>
     <div class="modal-footer">
       <button class="btn btn-ghost" onclick="document.getElementById('newProjectModal').classList.remove('open')">Cancel</button>
@@ -1310,7 +1310,7 @@ function saveEditTask() {
   const t = ALL_TASKS.find(x => x.id === detailTaskId);
   if (!t) return;
   const title = document.getElementById('et-title').value.trim();
-  if (!title) { showToast('Başlık boş bırakılamaz', 'error'); return; }
+  if (!title) { showToast('Title cannot be empty', 'error'); return; }
   t.title    = title;
   t.project  = document.getElementById('et-project').value;
   t.priority = document.getElementById('et-priority').value;
@@ -1487,7 +1487,7 @@ function syncBar(state, msg) {
 async function dbLoad() {
   if (localMode) { loadLocalData(); initRender(); return; }
   document.getElementById('loadingOverlay').classList.remove('hidden');
-  document.getElementById('loadingText').textContent = 'JSONbin\'den veriler yükleniyor...';
+  document.getElementById('loadingText').textContent = 'Loading data from JSONbin...';
   try {
     const res = await fetch(`https://api.jsonbin.io/v3/b/${DB_BIN_ID}/latest`, {
       headers: { 'X-Master-Key': DB_API_KEY }
@@ -1503,13 +1503,13 @@ async function dbLoad() {
     }
     document.getElementById('loadingOverlay').classList.add('hidden');
     initRender();
-    syncBar('ok', '✓ Veriler yüklendi');
+    syncBar('ok', '✓ Data loaded');
     // Poll every 30 seconds for updates from teammates
     setInterval(dbPoll, 30000);
   } catch(e) {
     document.getElementById('loadingOverlay').classList.add('hidden');
-    syncBar('error', '✗ Bağlantı hatası: ' + e.message);
-    showToast('JSONbin bağlantısı kurulamadı, local modda devam ediliyor', 'error');
+    syncBar('error', '✗ Connection error: ' + e.message);
+    showToast('Could not connect to JSONbin, continuing in local mode', 'error');
     localMode = true;
     loadLocalData();
     initRender();
@@ -1530,7 +1530,7 @@ async function dbSave() {
       syncBar('ok', '✓ Kaydedildi');
       saveLocalData(); // backup
     } catch(e) {
-      syncBar('error', '✗ Kayıt hatası');
+      syncBar('error', '✗ Save error');
     }
   }, 600);
 }
@@ -1573,7 +1573,7 @@ function loadLocalData() {
 // EXPORT — PDF & EXCEL
 // ══════════════════════════════════════
 function exportPDF() {
-  showToast('PDF hazırlanıyor...', '');
+  showToast('Preparing PDF...', '');
   // Build printable HTML and trigger browser print-to-PDF
   const done  = ALL_TASKS.filter(t => t.status === 'done').length;
   const late  = ALL_TASKS.filter(t => t.status === 'late').length;
@@ -1601,7 +1601,7 @@ function exportPDF() {
     .footer{margin-top:32px;font-size:10px;color:#8dafc5;border-top:1px solid #e2ecf5;padding-top:12px}
   </style></head><body>
   <h1>TaskFlow — Sprint Report</h1>
-  <p>Sprint 7 of 12 · Generated ${new Date().toLocaleDateString('tr-TR')}</p>
+  <p>Sprint 7 of 12 · Generated ${new Date().toLocaleDateString('en-US')}</p>
   <div class="kpis">
     <div class="kpi"><div class="kpi-l">Total Tasks</div><div class="kpi-v">${ALL_TASKS.length}</div></div>
     <div class="kpi"><div class="kpi-l">Completed</div><div class="kpi-v" style="color:#10b981">${done}</div></div>
@@ -1612,7 +1612,7 @@ function exportPDF() {
   <h2>All Tasks</h2>
   <table><thead><tr><th>Task</th><th>Project</th><th>Assignee</th><th>Status</th><th>Due</th><th>Priority</th></tr></thead>
   <tbody>${rows}</tbody></table>
-  <div class="footer">TaskFlow · Task &amp; Team Productivity Management Tool · ${new Date().toLocaleString('tr-TR')}</div>
+  <div class="footer">TaskFlow · Task &amp; Team Productivity Management Tool · ${new Date().toLocaleString('en-US')}</div>
   </body></html>`;
   const w = window.open('', '_blank');
   w.document.write(html);
@@ -1621,7 +1621,7 @@ function exportPDF() {
 }
 
 function exportExcel(source) {
-  showToast('Excel hazırlanıyor...', '');
+  showToast('Preparing Excel...', '');
   let headers, rows;
   if (source === 'tasks' || source === 'dashboard' || source === 'reports') {
     headers = ['ID','Task','Project','Assignee','Role','Status','Priority','Due Date'];
@@ -1673,13 +1673,13 @@ function openNewProject() {
 
 function createProject() {
   const name = document.getElementById('np-name').value.trim();
-  if (!name) { showToast('Proje adı boş bırakılamaz', 'error'); return; }
+  if (!name) { showToast('Project name cannot be empty', 'error'); return; }
   const desc   = document.getElementById('np-desc').value.trim() || 'No description.';
   const color  = document.getElementById('np-color').value;
   const tasks  = parseInt(document.getElementById('np-tasks').value) || 10;
   const sel    = document.getElementById('np-members');
   const members = Array.from(sel.selectedOptions).map(o => parseInt(o.value));
-  if (!members.length) { showToast('En az bir üye seç', 'error'); return; }
+  if (!members.length) { showToast('Select at least one member', 'error'); return; }
   const newProj = {
     id: 'p' + (PROJECTS.length + 1),
     name, color, desc,
@@ -1697,7 +1697,7 @@ function createProject() {
   document.getElementById('np-name').value = '';
   document.getElementById('np-desc').value = '';
   renderProjects();
-  showToast('Proje oluşturuldu: ' + name, 'success');
+  showToast('Project created: ' + name, 'success');
 }
 
 // ══════════════════════════════════════

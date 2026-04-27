@@ -1,0 +1,195 @@
+{
+  "summary": {
+    "completionRate": 78,
+    "delayedTasks": 7,
+    "activeMembers": 6,
+    "totalTasks": 42,
+    "uptime": 99.94,
+    "responseTime": 124
+  },
+  "projects": [
+    {
+      "id": 1,
+      "name": "Platform v2.0",
+      "progress": 72,
+      "status": "active"
+    },
+    {
+      "id": 2,
+      "name": "Mobile App",
+      "progress": 58,
+      "status": "active"
+    },
+    {
+      "id": 3,
+      "name": "API Gateway",
+      "progress": 91,
+      "status": "active"
+    }
+  ],
+  "tasks": [
+    {
+      "id": 6,
+      "title": "Refine activity filters",
+      "project": "Platform v2.0",
+      "status": "In Progress",
+      "priority": "Medium",
+      "assignee": "Zeynep Sude Ağcabay",
+      "dueDate": "2026-04-11",
+      "description": "Tighten the activity timeline filters and spacing."
+    },
+    {
+      "id": 1,
+      "title": "Auth token refresh logic",
+      "project": "Platform v2.0",
+      "status": "In Progress",
+      "priority": "High",
+      "assignee": "Ezgi Turan"
+    },
+    {
+      "id": 2,
+      "title": "Dashboard UI wireframes",
+      "project": "Platform v2.0",
+      "status": "In Progress",
+      "priority": "High",
+      "assignee": "Zeynep Sude Ağcabay"
+    },
+    {
+      "id": 3,
+      "title": "Rate limit middleware",
+      "project": "API Gateway",
+      "status": "Delayed",
+      "priority": "High",
+      "assignee": "Ezgi Turan"
+    },
+    {
+      "id": 4,
+      "title": "Stakeholder communication plan",
+      "project": "Data Pipeline",
+      "status": "To Do",
+      "priority": "Medium",
+      "assignee": "Murat Emre Doğan"
+    },
+    {
+      "id": 5,
+      "title": "UI component library",
+      "project": "Platform v2.0",
+      "status": "In Progress",
+      "priority": "Medium",
+      "assignee": "Zeynep Sude Ağcabay"
+    }
+  ],
+  "risks": [
+    {
+      "id": 1,
+      "title": "Schedule overrun",
+      "category": "Project",
+      "severity": "High"
+    },
+    {
+      "id": 2,
+      "title": "Technical debt growth",
+      "category": "Technical",
+      "severity": "Medium"
+    },
+    {
+      "id": 3,
+      "title": "Adoption resistance",
+      "category": "Stakeholder",
+      "severity": "Medium"
+    },
+    {
+      "id": 4,
+      "title": "Backend latency",
+      "category": "System",
+      "severity": "Low"
+    }
+  ],
+  "comments": [
+    {
+      "id": 1,
+      "taskId": 1,
+      "author": "Kerem Ozcan",
+      "body": "Please confirm the refresh edge cases before release.",
+      "createdAt": "2026-04-17T10:22:00.000Z"
+    },
+    {
+      "id": 2,
+      "taskId": 1,
+      "author": "Ezgi Turan",
+      "body": "Working on it now.",
+      "createdAt": "2026-04-17T11:45:00.000Z"
+    },
+    {
+      "id": 3,
+      "taskId": 3,
+      "author": "Kerem Ozcan",
+      "body": "This is blocking the gateway milestone.",
+      "createdAt": "2026-04-16T09:10:00.000Z"
+    }
+  ],
+  "activities": [
+    {
+      "id": 4,
+      "actor": "system",
+      "action": "Created task",
+      "target": "refesd<",
+      "meta": "Platform v2.0",
+      "createdAt": "2026-04-26T19:31:05.032Z"
+    },
+    {
+      "id": 1,
+      "actor": "Ezgi Turan",
+      "action": "Created task",
+      "target": "Auth token refresh logic",
+      "meta": "task create",
+      "createdAt": "2026-04-17T12:00:00.000Z"
+    },
+    {
+      "id": 2,
+      "actor": "Kerem Ozcan",
+      "action": "Added comment",
+      "target": "Rate limit middleware",
+      "meta": "comment",
+      "createdAt": "2026-04-17T12:10:00.000Z"
+    },
+    {
+      "id": 3,
+      "actor": "Ezgi Turan",
+      "action": "Updated task",
+      "target": "Dashboard UI wireframes",
+      "meta": "status -> In Progress",
+      "createdAt": "2026-04-17T12:20:00.000Z"
+    }
+  ],
+  "notifications": [
+    {
+      "id": 4,
+      "title": "Task created",
+      "body": "refesd< was created in Platform v2.0.",
+      "isRead": false,
+      "createdAt": "2026-04-26T19:31:05.032Z"
+    },
+    {
+      "id": 1,
+      "title": "Task delayed",
+      "body": "Rate limit middleware is marked delayed.",
+      "isRead": false,
+      "createdAt": "2026-04-17T12:30:00.000Z"
+    },
+    {
+      "id": 2,
+      "title": "New comment",
+      "body": "Kerem commented on Auth token refresh logic.",
+      "isRead": false,
+      "createdAt": "2026-04-17T12:25:00.000Z"
+    },
+    {
+      "id": 3,
+      "title": "Assignment changed",
+      "body": "Dashboard UI wireframes is now in progress.",
+      "isRead": true,
+      "createdAt": "2026-04-17T12:15:00.000Z"
+    }
+  ]
+}

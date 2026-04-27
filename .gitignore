@@ -1,0 +1,6 @@
+node_modules/
+apps/**/node_modules/
+dist/
+apps/web/dist/
+apps/api/data/state.json
+.DS_Store
