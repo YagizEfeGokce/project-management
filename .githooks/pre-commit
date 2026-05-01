@@ -1,0 +1,27 @@
+#!/bin/bash
+set -euo pipefail
+
+# Lightweight pre-commit hook: syntax-check staged .js files
+# Aligned with project: no ESLint/Prettier installed, so we use node --check
+
+STAGED_JS=$(git diff --cached --name-only --diff-filter=ACM | grep '\.js$' || true)
+
+if [ -z "$STAGED_JS" ]; then
+  exit 0
+fi
+
+ERRORS=0
+for file in $STAGED_JS; do
+  if [ -f "$file" ]; then
+    # node --check respects "type": "module" in nearest package.json
+    if ! node --check "$file" 2>/dev/null; then
+      echo "Syntax error: $file"
+      ERRORS=$((ERRORS + 1))
+    fi
+  fi
+done
+
+if [ "$ERRORS" -gt 0 ]; then
+  echo "$ERRORS file(s) failed syntax check. Commit aborted."
+  exit 1
+fi

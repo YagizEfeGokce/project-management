@@ -1,4 +1,10 @@
-import { PrismaClient } from '@prisma/client';
+let PrismaClient = null;
+try {
+  const prismaMod = await import('@prisma/client');
+  PrismaClient = prismaMod.PrismaClient;
+} catch {
+  PrismaClient = null;
+}
 
 let prisma;
 
@@ -8,6 +14,9 @@ export function hasDatabaseUrl() {
 
 export function getPrisma() {
   if (!hasDatabaseUrl()) return null;
+  if (!PrismaClient) {
+    throw new Error('DATABASE_URL is set but @prisma/client is not available. Run "npm install" or generate the client.');
+  }
   if (!prisma) prisma = new PrismaClient();
   return prisma;
 }

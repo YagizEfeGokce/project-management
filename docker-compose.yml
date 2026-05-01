@@ -2,6 +2,7 @@ services:
   postgres:
     image: postgres:16-alpine
     container_name: taskflow-postgres
+    restart: unless-stopped
     environment:
       POSTGRES_USER: taskflow
       POSTGRES_PASSWORD: taskflow
@@ -10,6 +11,78 @@ services:
       - "5432:5432"
     volumes:
       - taskflow_pgdata:/var/lib/postgresql/data
+      - ./scripts/db-backup:/backup:rw
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U taskflow -d taskflow"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 128M
+
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    container_name: taskflow-api
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=postgresql://taskflow:taskflow@postgres:5432/taskflow?schema=public
+      - JWT_SECRET=${JWT_SECRET}
+      - PORT=3001
+      - LOG_LEVEL=info
+      - CORS_ORIGIN=*
+      - RATE_LIMIT_WINDOW_MS=900000
+      - RATE_LIMIT_MAX=100
+    ports:
+      - "3001:3001"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3001/health/live"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+        reservations:
+          cpus: '0.1'
+          memory: 64M
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    container_name: taskflow-web
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_healthy
+    environment:
+      - NODE_ENV=production
+      - VITE_API_BASE_URL=http://api:3001
+    ports:
+      - "5173:80"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:80"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
 
 volumes:
   taskflow_pgdata:
+    driver: local

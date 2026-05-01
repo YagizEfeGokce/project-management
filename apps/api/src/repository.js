@@ -196,6 +196,7 @@ function appendNotificationToState(state, title, body, isRead = false) {
 }
 
 let seeded = false;
+let seedingPromise = null;
 
 const fallbackUsers = [
   {
@@ -210,94 +211,99 @@ const fallbackUsers = [
 async function ensureSeeded() {
   const prisma = getPrisma();
   if (!prisma || seeded) return;
+  if (seedingPromise) return seedingPromise;
 
-  const [taskCount, projectCount, riskCount, stakeholderCount] = await Promise.all([
-    prisma.task.count(),
-    prisma.project.count(),
-    prisma.risk.count(),
-    prisma.stakeholder.count()
-  ]);
+  seedingPromise = (async () => {
+    const [taskCount, projectCount, riskCount, stakeholderCount] = await Promise.all([
+      prisma.task.count(),
+      prisma.project.count(),
+      prisma.risk.count(),
+      prisma.stakeholder.count()
+    ]);
 
-  const userCount = await prisma.user.count();
-  const commentCount = await prisma.comment.count();
-  const activityCount = await prisma.activityLog.count();
-  const notificationCount = await prisma.notification.count();
+    const userCount = await prisma.user.count();
+    const commentCount = await prisma.comment.count();
+    const activityCount = await prisma.activityLog.count();
+    const notificationCount = await prisma.notification.count();
 
-  if (taskCount || projectCount || riskCount || stakeholderCount || userCount || commentCount || activityCount || notificationCount) {
+    if (taskCount || projectCount || riskCount || stakeholderCount || userCount || commentCount || activityCount || notificationCount) {
+      seeded = true;
+      return;
+    }
+
+    const state = await loadState();
+
+    await prisma.project.createMany({
+      data: state.projects.map(project => ({
+        name: project.name,
+        progress: project.progress,
+        status: project.status
+      }))
+    });
+
+    await prisma.task.createMany({
+      data: state.tasks.map(task => ({
+        title: task.title,
+        project: task.project,
+        status: task.status,
+        priority: task.priority,
+        assignee: task.assignee,
+        dueDate: task.dueDate,
+        description: task.description
+      }))
+    });
+
+    await prisma.risk.createMany({
+      data: state.risks.map(risk => ({
+        title: risk.title,
+        category: risk.category,
+        severity: risk.severity
+      }))
+    });
+
+    await prisma.stakeholder.createMany({
+      data: [
+        { name: 'Project Manager', concern: 'Delivery visibility' },
+        { name: 'Team Member', concern: 'Workload balance' },
+        { name: 'Client', concern: 'Business value' }
+      ]
+    });
+
+    await prisma.user.createMany({
+      data: [
+        { name: 'Ezgi Turan', email: 'admin@taskflow.local', passwordHash: bcrypt.hashSync('admin123', 10), role: 'admin' },
+        { name: 'Kerem Ozcan', email: 'kerem@taskflow.local', passwordHash: bcrypt.hashSync('member123', 10), role: 'manager' }
+      ]
+    });
+
+    await prisma.comment.createMany({
+      data: [
+        { taskId: 1, author: 'Kerem Ozcan', body: 'Please confirm the refresh edge cases before release.' },
+        { taskId: 1, author: 'Ezgi Turan', body: 'Working on it now.' },
+        { taskId: 3, author: 'Kerem Ozcan', body: 'This is blocking the gateway milestone.' }
+      ]
+    });
+
+    await prisma.activityLog.createMany({
+      data: [
+        { actor: 'Ezgi Turan', action: 'Created task', target: 'Auth token refresh logic', meta: 'task create' },
+        { actor: 'Kerem Ozcan', action: 'Added comment', target: 'Rate limit middleware', meta: 'comment' },
+        { actor: 'Ezgi Turan', action: 'Updated task', target: 'Dashboard UI wireframes', meta: 'status -> In Progress' }
+      ]
+    });
+
+    await prisma.notification.createMany({
+      data: [
+        { title: 'Task delayed', body: 'Rate limit middleware is marked delayed.', isRead: false },
+        { title: 'New comment', body: 'Kerem commented on Auth token refresh logic.', isRead: false },
+        { title: 'Assignment changed', body: 'Dashboard UI wireframes is now in progress.', isRead: true }
+      ]
+    });
+
     seeded = true;
-    return;
-  }
+  })();
 
-  const state = await loadState();
-
-  await prisma.project.createMany({
-    data: state.projects.map(project => ({
-      name: project.name,
-      progress: project.progress,
-      status: project.status
-    }))
-  });
-
-  await prisma.task.createMany({
-    data: state.tasks.map(task => ({
-      title: task.title,
-      project: task.project,
-      status: task.status,
-      priority: task.priority,
-      assignee: task.assignee,
-      dueDate: task.dueDate,
-      description: task.description
-    }))
-  });
-
-  await prisma.risk.createMany({
-    data: state.risks.map(risk => ({
-      title: risk.title,
-      category: risk.category,
-      severity: risk.severity
-    }))
-  });
-
-  await prisma.stakeholder.createMany({
-    data: [
-      { name: 'Project Manager', concern: 'Delivery visibility' },
-      { name: 'Team Member', concern: 'Workload balance' },
-      { name: 'Client', concern: 'Business value' }
-    ]
-  });
-
-  await prisma.user.createMany({
-    data: [
-      { name: 'Ezgi Turan', email: 'admin@taskflow.local', passwordHash: bcrypt.hashSync('admin123', 10), role: 'admin' },
-      { name: 'Kerem Ozcan', email: 'kerem@taskflow.local', passwordHash: bcrypt.hashSync('member123', 10), role: 'manager' }
-    ]
-  });
-
-  await prisma.comment.createMany({
-    data: [
-      { taskId: 1, author: 'Kerem Ozcan', body: 'Please confirm the refresh edge cases before release.' },
-      { taskId: 1, author: 'Ezgi Turan', body: 'Working on it now.' },
-      { taskId: 3, author: 'Kerem Ozcan', body: 'This is blocking the gateway milestone.' }
-    ]
-  });
-
-  await prisma.activityLog.createMany({
-    data: [
-      { actor: 'Ezgi Turan', action: 'Created task', target: 'Auth token refresh logic', meta: 'task create' },
-      { actor: 'Kerem Ozcan', action: 'Added comment', target: 'Rate limit middleware', meta: 'comment' },
-      { actor: 'Ezgi Turan', action: 'Updated task', target: 'Dashboard UI wireframes', meta: 'status -> In Progress' }
-    ]
-  });
-
-  await prisma.notification.createMany({
-    data: [
-      { title: 'Task delayed', body: 'Rate limit middleware is marked delayed.', isRead: false },
-      { title: 'New comment', body: 'Kerem commented on Auth token refresh logic.', isRead: false },
-      { title: 'Assignment changed', body: 'Dashboard UI wireframes is now in progress.', isRead: true }
-    ]
-  });
-
-  seeded = true;
+  return seedingPromise;
 }
 
 export async function authenticateUser(email, password) {
@@ -356,18 +362,17 @@ export async function getSummary() {
 }
 
 export async function listTasks(query = {}) {
-  const hasQuery = Object.keys(query || {}).some(key => String(query[key] || '').trim() !== '');
   if (!hasDatabaseUrl()) {
     const state = await loadState();
     const result = applyTaskQuery(state.tasks || [], query);
-    return hasQuery ? result : result.items;
+    return result.items;
   }
 
   const prisma = getPrisma();
   await ensureSeeded();
   const tasks = await prisma.task.findMany();
   const result = applyTaskQuery(tasks.map(normalizeTask), query);
-  return hasQuery ? result : result.items;
+  return result.items;
 }
 
 export async function getTaskById(id) {
@@ -500,12 +505,17 @@ export async function updateTask(id, payload) {
 
   const prisma = getPrisma();
   await ensureSeeded();
-  const task = await prisma.task.update({ where: { id: Number(id) }, data: payload });
-  await addActivity('system', 'Updated task', task.title, `status -> ${task.status}`);
-  if (String(payload.status || '').toLowerCase().includes('delayed')) {
-    await addNotification('Task delayed', `${task.title} is now delayed.`, false);
+  try {
+    const task = await prisma.task.update({ where: { id: Number(id) }, data: payload });
+    await addActivity('system', 'Updated task', task.title, `status -> ${task.status}`);
+    if (String(payload.status || '').toLowerCase().includes('delayed')) {
+      await addNotification('Task delayed', `${task.title} is now delayed.`, false);
+    }
+    return normalizeTask(task);
+  } catch (err) {
+    if (err.code === 'P2025') return null;
+    throw err;
   }
-  return normalizeTask(task);
 }
 
 export async function deleteTask(id) {
@@ -523,11 +533,16 @@ export async function deleteTask(id) {
 
   const prisma = getPrisma();
   await ensureSeeded();
-  const existing = await prisma.task.findUnique({ where: { id: Number(id) } });
-  await prisma.task.delete({ where: { id: Number(id) } });
-  await addActivity('system', 'Deleted task', existing?.title || `Task #${id}`, existing?.project || null);
-  await addNotification('Task deleted', `${existing?.title || `Task #${id}`} was removed.`, false);
-  return true;
+  try {
+    const existing = await prisma.task.findUnique({ where: { id: Number(id) } });
+    await prisma.task.delete({ where: { id: Number(id) } });
+    await addActivity('system', 'Deleted task', existing?.title || `Task #${id}`, existing?.project || null);
+    await addNotification('Task deleted', `${existing?.title || `Task #${id}`} was removed.`, false);
+    return true;
+  } catch (err) {
+    if (err.code === 'P2025') return false;
+    throw err;
+  }
 }
 
 export async function listProjects() {
@@ -586,9 +601,14 @@ export async function updateProject(id, payload) {
 
   const prisma = getPrisma();
   await ensureSeeded();
-  const entry = await prisma.project.update({ where: { id: Number(id) }, data: Object.fromEntries(Object.entries(project).filter(([, value]) => value !== undefined)) });
-  await addActivity('system', 'Updated project', entry.name, entry.status);
-  return entry;
+  try {
+    const entry = await prisma.project.update({ where: { id: Number(id) }, data: Object.fromEntries(Object.entries(project).filter(([, value]) => value !== undefined)) });
+    await addActivity('system', 'Updated project', entry.name, entry.status);
+    return entry;
+  } catch (err) {
+    if (err.code === 'P2025') return null;
+    throw err;
+  }
 }
 
 export async function deleteProject(id) {
@@ -605,10 +625,15 @@ export async function deleteProject(id) {
 
   const prisma = getPrisma();
   await ensureSeeded();
-  const existing = await prisma.project.findUnique({ where: { id: Number(id) } });
-  await prisma.project.delete({ where: { id: Number(id) } });
-  await addActivity('system', 'Deleted project', existing?.name || `Project #${id}`, existing?.status || null);
-  return true;
+  try {
+    const existing = await prisma.project.findUnique({ where: { id: Number(id) } });
+    await prisma.project.delete({ where: { id: Number(id) } });
+    await addActivity('system', 'Deleted project', existing?.name || `Project #${id}`, existing?.status || null);
+    return true;
+  } catch (err) {
+    if (err.code === 'P2025') return false;
+    throw err;
+  }
 }
 
 export async function listRisks() {
@@ -637,18 +662,17 @@ export async function listStakeholders() {
 }
 
 export async function listActivities(query = {}) {
-  const hasQuery = Object.keys(query || {}).some(key => String(query[key] || '').trim() !== '');
   if (!hasDatabaseUrl()) {
     const state = await loadState();
     const result = applyActivityQuery(state.activities || [], query);
-    return hasQuery ? result : result.items;
+    return result.items;
   }
 
   const prisma = getPrisma();
   await ensureSeeded();
   const items = await prisma.activityLog.findMany();
   const result = applyActivityQuery(items, query);
-  return hasQuery ? result : result.items;
+  return result.items;
 }
 
 export async function listNotifications() {
@@ -735,10 +759,15 @@ export async function updateNotification(id, payload) {
 
   const prisma = getPrisma();
   await ensureSeeded();
-  const notification = await prisma.notification.update({
-    where: { id: Number(id) },
-    data: { isRead: Boolean(payload.isRead) }
-  });
-  await addActivity('system', notification.isRead ? 'Marked notification read' : 'Marked notification unread', notification.title, null);
-  return notification;
+  try {
+    const notification = await prisma.notification.update({
+      where: { id: Number(id) },
+      data: { isRead: Boolean(payload.isRead) }
+    });
+    await addActivity('system', notification.isRead ? 'Marked notification read' : 'Marked notification unread', notification.title, null);
+    return notification;
+  } catch (err) {
+    if (err.code === 'P2025') return null;
+    throw err;
+  }
 }

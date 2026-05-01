@@ -9,6 +9,7 @@
     "dev:api": "npm --prefix apps/api run dev",
     "dev": "concurrently \"npm --prefix apps/api run dev\" \"npm --prefix apps/web run dev\"",
     "build:web": "npm --prefix apps/web run build",
+    "validate": "npm audit --audit-level=high && npm run build:web && ./scripts/smoke-test.sh",
     "prisma:generate": "prisma generate --schema prisma/schema.prisma",
     "prisma:migrate": "prisma migrate dev --schema prisma/schema.prisma",
     "prisma:deploy": "prisma migrate deploy --schema prisma/schema.prisma",

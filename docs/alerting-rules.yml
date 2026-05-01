@@ -1,0 +1,100 @@
+# TaskFlow Alerting Rules (Prometheus-compatible)
+# These rules map to the thresholds documented in docs/ops-runbook.md
+# For use with any Prometheus-compatible monitoring stack.
+
+groups:
+  - name: taskflow-alerts
+    interval: 30s
+    rules:
+      # P1 — API down
+      - alert: TaskFlowAPIDown
+        expr: up{job="taskflow-api"} == 0
+        for: 1m
+        labels:
+          severity: P1
+        annotations:
+          summary: "TaskFlow API is down"
+          description: "API instance {{ $labels.instance }} has been down for more than 1 minute."
+
+      # P1 — Database down
+      - alert: TaskFlowDatabaseDown
+        expr: taskflow_api_readiness{check="database"} == 0
+        for: 1m
+        labels:
+          severity: P1
+        annotations:
+          summary: "TaskFlow database is unreachable"
+          description: "Readiness probe reports database disconnected for more than 1 minute."
+
+      # P1 — High error rate
+      - alert: TaskFlowHighErrorRate
+        expr: |
+          (
+            sum(rate(http_requests_total{status=~"5.."}[5m]))
+            /
+            sum(rate(http_requests_total[5m]))
+          ) > 0.01
+        for: 2m
+        labels:
+          severity: P1
+        annotations:
+          summary: "TaskFlow error rate is above 1%"
+          description: "5xx error rate is {{ $value | humanizePercentage }} over the last 5 minutes."
+
+      # P2 — High latency
+      - alert: TaskFlowHighLatency
+        expr: |
+          histogram_quantile(0.95,
+            sum(rate(http_request_duration_seconds_bucket[10m])) by (le)
+          ) > 0.5
+        for: 2m
+        labels:
+          severity: P2
+        annotations:
+          summary: "TaskFlow p95 latency exceeds 500ms"
+          description: "p95 request latency is {{ $value | humanizeDuration }} over the last 10 minutes."
+
+      # P2 — Disk full
+      - alert: TaskFlowDiskFull
+        expr: (node_filesystem_avail_bytes / node_filesystem_size_bytes) < 0.15
+        for: 5m
+        labels:
+          severity: P2
+        annotations:
+          summary: "TaskFlow disk usage is above 85%"
+          description: "Disk {{ $labels.device }} on {{ $labels.instance }} is {{ 100 - ($value * 100) | humanize }}% full."
+
+      # P3 — Rate limit hits
+      - alert: TaskFlowRateLimitHits
+        expr: |
+          (
+            sum(rate(http_requests_total{status="429"}[5m]))
+            /
+            sum(rate(http_requests_total[5m]))
+          ) > 0.10
+        for: 2m
+        labels:
+          severity: P3
+        annotations:
+          summary: "TaskFlow rate limit hit rate is above 10%"
+          description: "429 responses are {{ $value | humanizePercentage }} of total traffic."
+
+      # P2 — Backup failure
+      - alert: TaskFlowBackupFailed
+        expr: time() - taskflow_last_successful_backup_timestamp > 90000
+        for: 1m
+        labels:
+          severity: P2
+        annotations:
+          summary: "TaskFlow backup is overdue"
+          description: "No successful backup in the last 25 hours."
+
+      # P2 — High memory usage
+      - alert: TaskFlowHighMemory
+        expr: (process_resident_memory_bytes / node_memory_MemTotal_bytes) > 0.80
+        for: 5m
+        labels:
+          severity: P2
+        annotations:
+          summary: "TaskFlow API memory usage is above 80%"
+          description: "API instance {{ $labels.instance }} is using {{ $value | humanizePercentage }} of system memory."
