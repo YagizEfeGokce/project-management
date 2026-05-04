@@ -4,11 +4,19 @@ set -euo pipefail
 # Smoke test for TaskFlow API
 # Starts the API in JSON-fallback mode and verifies all health endpoints
 
-API_URL="${1:-http://localhost:3001}"
+# Find an available ephemeral port instead of hardcoding 3001
+find_free_port() {
+  python3 -c "import socket; s=socket.socket(); s.bind(('',0)); print(s.getsockname()[1]); s.close()" 2>/dev/null || \
+  node -e "const s=require('net').createServer();s.listen(0,()=>{console.log(s.address().port);s.close()})" 2>/dev/null || \
+  echo "3001"
+}
+
+PORT=$(find_free_port)
+API_URL="${1:-http://localhost:$PORT}"
 TIMEOUT=30
 
 echo "=== TaskFlow Smoke Test ==="
-echo "Target: $API_URL"
+echo "Target: $API_URL (port $PORT)"
 echo ""
 
 # Wait for API to be ready
@@ -28,14 +36,20 @@ wait_for_api() {
 
 # If API is not running, start it in background
 if ! curl -sf --max-time 10 --connect-timeout 5 "$API_URL/health/live" > /dev/null 2>&1; then
-  echo "Starting API in background (JSON fallback mode)..."
+  echo "Starting API in background (JSON fallback mode) on port $PORT..."
   cd apps/api
-  PORT=3001 NODE_ENV=test node src/server.js &
+  PORT=$PORT NODE_ENV=test node src/server.js &
   API_PID=$!
   cd ../..
 
-  # Cleanup on exit
-  trap 'kill $API_PID 2>/dev/null || true' EXIT
+  # Cleanup on exit / interrupt / termination
+  cleanup() {
+    if [ -n "${API_PID:-}" ]; then
+      kill -- -"$API_PID" 2>/dev/null || kill "$API_PID" 2>/dev/null || true
+      wait "$API_PID" 2>/dev/null || true
+    fi
+  }
+  trap cleanup EXIT INT TERM
 
   wait_for_api "$API_URL"
   echo "API is live (PID: $API_PID)"

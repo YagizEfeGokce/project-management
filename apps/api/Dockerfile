@@ -21,7 +21,10 @@ COPY package*.json ./
 # Run as non-root
 RUN addgroup -g 1001 -S nodejs && \
     adduser -S nodejs -u 1001
+RUN mkdir -p /app/apps/api/src/data && chown -R nodejs:nodejs /app/apps/api/src/data
 USER nodejs
 
 EXPOSE 3001
-CMD ["node", "apps/api/src/server.js"]
+COPY apps/api/entrypoint.sh ./entrypoint.sh
+RUN chmod +x ./entrypoint.sh
+CMD ["./entrypoint.sh"]
