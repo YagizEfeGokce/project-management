@@ -8,3 +8,5 @@ apps/api/data/state.json
 .gitnexus
 .claude/
 backups/
+playwright-report/
+test-results/
