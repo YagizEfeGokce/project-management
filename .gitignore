@@ -3,4 +3,8 @@ apps/**/node_modules/
 dist/
 apps/web/dist/
 apps/api/data/state.json
+.env
 .DS_Store
+.gitnexus
+.claude/
+backups/
